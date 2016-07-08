@@ -1,0 +1,4 @@
+/custom.iso
+/debian-*.iso
+*.pyc
+/cd-image/*

@@ -23,18 +23,14 @@ class BuildInstaller(object):
     return "%sp1" % (loopDevice)
   
   def _mountIso(self, iso, loopDeviceRe, infoMountPointRe):
-    #loop_device=`udisksctl loop-setup --no-user-interaction -r -f "$GETISO_OUTFILENAME" | grep -o -e /dev/[a-zA-Z0-9]*\. -`
-    print("iso: %s" % (iso) )
     loopSetupOutput = check_output([
                 "udisksctl",
                 "loop-setup",
                 "--read-only",
                 "-f", iso,
               ])
-    print("loopSetupOutput: %s" % (loopSetupOutput))
     loopDeviceRe = loopDeviceRe % ( iso )
     loopDevice = re.search(loopDeviceRe, loopSetupOutput).group(1)
-    print(loopDevice)
     loopDevicePart = None
     sleep(1)
     if loopDevice:
@@ -45,7 +41,6 @@ class BuildInstaller(object):
                   "-b", loopDevicePart,
                 ])
       mountPoint = re.search(infoMountPointRe, infoOutput).group(1)
-      print(mountPoint)
     return ( loopDevice, mountPoint )
     
       #~ print(mountOutput)
@@ -220,8 +215,6 @@ class BuildInstaller(object):
                       self.config.availableSettings,
                     )
     
-    print("%s" % (configDict))
-    
     #preseedcfg="${WORKING_DIRECTORY}preseed/preseed_${INSTALL_TYPE}_${PRESEED_NETCFG_HOSTNAME}.cfg"
     self.preseedCfgPath = os.path.join(
         "preseed",
@@ -238,6 +231,7 @@ class BuildInstaller(object):
     print( "latePackages: %s" % (latePackagesString) )
     
     outlines = preseedCfgTemplate
+    print("The following settings will be applied to preseed template %s :" % (preseedCfgTemplatePath) )
     for settingName, configValue in configDict.items():
       print("%s: %s" % (settingName, configValue) )
       preseedMatchString = self.preseedHelper.getPreseedMatchString(settingName)
@@ -305,10 +299,9 @@ class BuildInstaller(object):
       installTypePathDict[installType] = installTypePath
     
     for installType, installTypePath in installTypePathDict.items():
-      
+      print("Generating Config for install type %s from folder %s" % (installType, installTypePath) )
       self.installType = installType
       self.templatePath = installTypePath
-      print( "%svalues" % ( self.templatePath.replace("/",".") ) )
       self.InstallTypeConfig = import_module( self.templatePath.replace("/",".")+".config" )
       #self._copyTemplateStaticPath()
       self._generatePreseedCfg()

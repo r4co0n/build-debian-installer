@@ -1,6 +1,16 @@
 #!/usr/bin/python
 import re
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 class PreseedHelper(object):
   def getPreseedString(self, setting):
     result = ""
@@ -33,7 +43,3 @@ class PreseedHelper(object):
         result += c
     return result
 
-ph = PreseedHelper()
-print(ph.getPreseedString("debianInstaller_country"))
-print(ph.getPreseedMatchString("debianInstaller_country"))
-print(re.match(ph.getPreseedMatchString("debianInstaller_country"), "[debian-installer/country]"))

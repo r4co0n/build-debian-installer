@@ -14,14 +14,6 @@ class BuildInstallerConfig(object):
   templatesPath = 'templates/'
   templatesExtension = 'template'
   
-  
-  #~ installTypes = [
-    #~ 'installGenerator',
-    #~ 'odoo',
-    #~ 'odoo-web',
-    #~ 'docker',
-  #~ ]
-  
   preseedCfgTemplateName='preseed.cfg.stub'
   bootTxtCfgTemplateName='txt.cfg.stub'
   destinationPath = 'custom.iso'
@@ -65,30 +57,10 @@ class BuildInstallerConfig(object):
     "passwd_userFullname": "string",
     "passwd_username": "string",
     "passwd_userPasswordCrypted": "string_passwordhash",
-    
-    #"mirror_country",
-    #"mirror_http_hostname",
   }
-  #~ regexDict= {
-    #~ "debianInstaller_language": r"""\[debian-installer/language\]""",
-    #~ "debianInstaller_country": r"""\[debian-installer/country\]""",
-    #~ "debianInstaller_locale": r"""\[debian-installer/locale\]""",
-    
-    #~ "netcfg_hostname": r"""\[netcfg/hostname\]""",
-    #~ "netcfg_domain": r"""\[netcfg/domain\]""",
-    
-    #~ "passwd_rootPasswordCrypted": r"""\[passwd/root-password-crypted\]""",
-    #~ "passwd_userFullname": r"""\[passwd/user-fullname\]""",
-    #~ "passwd_username": r"""\[passwd/username\]""",
-    #~ "passwd_userPasswordCrypted": r"""\[passwd/user-password-crypted\]""",
-    
-    #~ "mirror_country": None,
-    #~ "mirror_http_hostname": None,
-    
-  #~ }
-  
+
   class PreseedDefaults(object):
-    debianInstaller_language = None
+    debianInstaller_language = "en"
     debianInstaller_country = "DE"
     debianInstaller_locale = "en_GB.utf8"
     

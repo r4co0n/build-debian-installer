@@ -1,0 +1,84 @@
+# Force install to use the CD for install, mirror for updates
+d-i mirror/country string manual
+d-i mirror/http/hostname string mirrors.us.kernel.org
+d-i mirror/http/hostname seen true
+d-i mirror/http/directory string /ubuntu
+d-i mirror/http/directory seen true
+d-i mirror/http/proxy string
+d-i mirror/suite string trusty
+d-i mirror/udeb/suite string trusty
+d-i preseed/late_command in-target sed -i 's/^deb cdrom/# DISABLED deb/' /etc/apt/sources.list
+
+# Force the language for the installer
+d-i debian-installer/language string en
+d-i debian-installer/locale string en_US.UTF-8
+d-i localechooser/preferred-locale string en_US.UTF-8
+d-i localechooser/supported-locales en_US.UTF-8
+d-i console-setup/ask_detect boolean false
+d-i keyboard-configuration/layout select USA
+d-i keyboard-configuration/variant select USA
+d-i keyboard-configuration/modelcode string pc105
+
+# Basic networking details
+d-i netcfg/get_hostname string trusty-hwe-test
+d-i netcfg/get_domain string trusty-hwe-test
+d-i netcfg/disable_autoconfig boolean true
+d-i netcfg/get_nameservers string 192.168.1.1
+d-i netcfg/get_ipaddress string 192.168.1.42
+d-i netcfg/get_netmask string 255.255.255.0
+d-i netcfg/get_gateway string 192.168.1.1
+d-i netcfg/confirm_static boolean true
+
+# Time, clock configuration
+d-i time/zone string UTC
+d-i clock-setup/utc-auto boolean true
+d-i clock-setup/utc boolean true
+d-i debconf debconf/frontend select Readline
+
+# Only prompt for any issues that are marked as 'critical'
+# hopefully none, or this will no longer be unattended
+d-i debconf/priority string critical
+
+d-i pkgsel/install-language-support boolean false
+tasksel tasksel/first multiselect minimal openssh-server
+popularity-contest popularity-contest/participate boolean false
+
+# Single drive, single partition, no raid, no LVM
+d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select atomic
+d-i partman/confirm_write_new_label boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman-basicfilesystems/no_mount_point yes
+d-i partman/mount_style select label
+
+# Auth, change me to suit
+d-i passwd/user-fullname string Ubuntu User
+d-i passwd/username string ubuntu
+d-i passwd/user-password password ubuntu
+d-i passwd/user-password-again password ubuntu
+d-i user-setup/encrypt-home boolean false
+d-i user-setup/allow-password-weak boolean true
+
+# Basic install, minimal + HWE injected kernel
+d-i pkgsel/install-language-support boolean false
+
+# This breaks the grub install, forcing it to prompt for confirmation
+# These packages were moved to late_command section instead
+# d-i pkgsel/include string openssh-server linux-generic-lts-xenial
+d-i pkgsel/update-policy select none
+d-i pkgsel/upgrade select none
+
+# Force grub, not lilo, no prompting for grub-pc
+d-i lilo-installer/skip boolean true
+d-i preseed/late_command string in-target apt-get -y update
+
+# We install the packages here instead of pkgsel/include because that breaks grub-pc 
+# forcing it to prompt for confirmtation, which we do not want. There is *NO* way 
+# around this, other than doing your package installs inside late_command as below
+d-i preseed/late_command string in-target apt-get -y --install-recommends --force-yes install openssh-server linux-generic-lts-xenial
+d-i preseed/late_command string in-target apt-get -y upgrade
+
+# Clean up and reboot
+d-i finish-install/reboot_in_progress note

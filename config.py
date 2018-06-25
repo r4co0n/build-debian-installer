@@ -7,18 +7,21 @@ class BuildInstallerConfig(object):
   
   loopDeviceRe = r"""^Mapped file %s as (/dev/[a-zA-Z0-9]*)\.\n$"""
   infoMountPointRe = r"""\n\s*MountPoints:\s*(/.*)\n"""
-  installTypeRe = r"""^%s(.*)_%s$"""
+  installTypeRe = r"""^%s(.*)%s$"""
   
   workingPath = 'cd-image/'
   staticPath = 'static/'
   templatesPath = 'templates/'
-  templatesExtension = 'template'
+  templatesExtension = '_template'
   
   preseedCfgTemplateName='preseed.cfg.stub'
   bootTxtCfgTemplateName='txt.cfg.stub'
   destinationPath = 'custom.iso'
   
-    
+  # Generate every installer
+  #wantedInstallTypes = None
+  wantedInstallTypes = ["plain"]
+  
   packages=[
     "etckeeper",
     "debian-goodies",
@@ -27,23 +30,6 @@ class BuildInstallerConfig(object):
     "needrestart",
     "apt-listbugs",
   ]
-  
-  #~ availableSettings = [
-    #~ "debianInstaller_language",
-    #~ "debianInstaller_country",
-    #~ "debianInstaller_locale",
-    
-    #~ "netcfg_hostname",
-    #~ "netcfg_domain",
-    
-    #~ "passwd_rootPasswordCrypted",
-    #~ "passwd_userFullname",
-    #~ "passwd_username",
-    #~ "passwd_userPasswordCrypted",
-    
-    #~ #"mirror_country",
-    #~ #"mirror_http_hostname",
-  #~ ]
   
   availableSettings = {
     "debianInstaller_language": "string",
@@ -62,7 +48,7 @@ class BuildInstallerConfig(object):
   class PreseedDefaults(object):
     debianInstaller_language = "en"
     debianInstaller_country = "DE"
-    debianInstaller_locale = "en_GB.utf8"
+    debianInstaller_locale = "en_GB.UTF-8"
     
     netcfg_hostname = "unnamed-host"
     netcfg_domain = ""

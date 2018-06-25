@@ -14,14 +14,30 @@ d-i debian-installer/country string [debian-installer/country]
 d-i debian-installer/locale string [debian-installer/locale]
 d-i localechooser/supported-locales multiselect de_DE.UTF-8
 d-i localechooser/preferred-locale select [debian-installer/locale]
+
+# * [Left Question] Keymap to use
+
+
 d-i keyboard-configuration/xkb-keymap select de
+keyboard-configuration keyboard-configuration/xkb-keymap select de
+d-i keyboard-configuration/layoutcode string de
+d-i debian-installer/keymap string de
+keyboard-configuration keyboard-configuration/layoutcode string de
+keyboard-configuration keyboard-configuration/variant select German
+
+
+
+# Added, not part of example
+console-setup console-setup/charmap47 select UTF-8
 
 ### Network configuration
 d-i netcfg/choose_interface select eth0
 d-i netcfg/dhcpv6_ticomeout string 1
 
+# * Override DHCP domain name, it's still used
+
 d-i netcfg/hostname string [netcfg/hostname]
-d-i netcfg/hostname string [netcfg/domain]
+d-i netcfg/domain string [netcfg/domain]
 
 d-i netcfg/get_hostname string [netcfg/hostname]
 d-i netcfg/get_domain string [netcfg/domain]
@@ -93,6 +109,9 @@ d-i apt-setup/contrib boolean true
 d-i apt-setup/services-select multiselect security, updates, backports
 #d-i apt-setup/security_host string security.debian.org
 
+d-i apt-setup/local0/repository string http://apt.dockerproject.org/repo debian-jessie main
+d-i apt-setup/local0/key string http://apt.dockerproject.org/gpg
+d-i apt-setup/local0/comment string docker repository
 ### Package selection
 tasksel tasksel/first multiselect standard, ssh-server
 
@@ -178,3 +197,4 @@ d-i finish-install/reboot_in_progress note
 # directly, or use the apt-install and in-target commands to easily install
 # packages and run commands in the target system.
 #d-i preseed/late_command string apt-install zsh; in-target chsh -s /bin/zsh
+d-i preseed/late_command string apt-install [xdirect/apt/late]

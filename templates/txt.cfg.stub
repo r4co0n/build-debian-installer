@@ -1,4 +1,4 @@
 label [label]
 	menu label ^Install [install-type] [netcfg/hostname]
 	kernel /install.amd/vmlinuz
-	append vga=788 initrd=/install.amd/initrd.gz preseed/file=[preseed/file] debian-installer/language=[debian-installer/language] debian-installer/country=[debian-installer/country] debian-installer/locale=[debian-installer/locale] debian-installer/keymap=de console-keymaps-at/keymap=de --- quiet 
+	append vga=788 initrd=/install.amd/initrd.gz preseed/file=[preseed/file] debian-installer/language=[debian-installer/language] debian-installer/country=[debian-installer/country] debian-installer/locale=[debian-installer/locale] debian-installer/keymap=de console-keymaps-at/keymap=de keyboard-configuration/xkb-keymap=de --- quiet 

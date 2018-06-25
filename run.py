@@ -29,28 +29,32 @@ class BuildInstaller(object):
                 "--read-only",
                 "-f", iso,
               ])
+    print(loopSetupOutput)
     loopDeviceRe = loopDeviceRe % ( iso )
     loopDevice = re.search(loopDeviceRe, loopSetupOutput).group(1)
+    print(loopDevice)
     loopDevicePart = None
-    sleep(1)
+    # If we don't wait we get no mountpoint from info output
+    sleep(3)
     if loopDevice:
       loopDevicePart = self.__getLoopDevicePart(loopDevice)
+      #mountOutput = check_output([
+      #          "udisksctl",
+      #          "mount",
+      #          "-b", loopDevicePart,
+      #        ])
+      #print(mountOutput)
       infoOutput = check_output([
                   "udisksctl",
                   "info",
                   "-b", loopDevicePart,
                 ])
+      print(infoOutput)
       mountPoint = re.search(infoMountPointRe, infoOutput).group(1)
     return ( loopDevice, mountPoint )
     
-      #~ print(mountOutput)
-      #~ mountRe = self.config.mountRe % ( self.loopDevicePart )
-      #~ self.mountPoint = re.search(mountRe, mountOutput).group(1)
-      #~ print(self.mountPoint)
-    
   def _unmountIso(self, loopDevice):
-    #sleep(1)
-    #udisksctl unmount --no-user-interaction -b "$loop_device"p1
+    
     loopDevicePart = self.__getLoopDevicePart(loopDevice)
     check_call([
       "udisksctl",
@@ -59,12 +63,12 @@ class BuildInstaller(object):
       "-b", "%s" % (loopDevicePart),
     ])
     #udisksctl loop-delete --no-user-interaction -b "$loop_device"
-    #~ check_call([
-      #~ "udisksctl",
-      #~ "loop-delete",
-      #~ "--no-user-interaction",
-      #~ "-b", "%s" % (loopDevice),
-    #~ ])
+    #check_call([
+    #  "udisksctl",
+    #  "loop-delete",
+    #  "--no-user-interaction",
+    #  "-b", "%s" % (loopDevice),
+    #])
   
   def _cleanDirectory(self, path):
     check_call([
@@ -164,7 +168,6 @@ class BuildInstaller(object):
     bootTxtCfg = re.sub( r"""\[debian-installer/country\]""", settingsDict["debianInstaller_country"], bootTxtCfg )
     bootTxtCfg = re.sub( r"""\[debian-installer/locale\]""", settingsDict["debianInstaller_locale"], bootTxtCfg )
     
-    
     bootTxtCfgPath = os.path.join( self.config.workingPath, "isolinux", "txt.cfg" )
     with open(bootTxtCfgPath, 'a') as bootTxtCfgFile:
       bootTxtCfgFile.write(bootTxtCfg)
@@ -175,7 +178,7 @@ class BuildInstaller(object):
     if settingType == "string":
       return self.__getString(setting)
     elif settingType == "string_passwordhash":
-      return self.__getPassword("Root User")
+      return self.__getPassword("aforementioned user")
     else:
       raise ValueError("No user-querying implemented for setting %s of type %s" % (setting, settingType) )
   
@@ -241,11 +244,35 @@ class BuildInstaller(object):
       outlines = re.sub( r"""\[pkgsel/include\]""", packagesString, outlines )
     else:
       outlines = re.sub( r"""^.*?\[pkgsel/include\].*?\n""", "", outlines )
-    with open(preseedCfgDeployPath, "w") as outFile:
-      outFile.write(outlines)
+    if latePackagesString != "":
+      outlines = re.sub( r"""\[xdirect/apt/late\]""", latePackagesString, outlines )
+    else:
+      outlines = re.sub( r"""^.*?\[xdirect/apt/late\].*?\n""", "", outlines )
     
-    self._setBootEntry(configDict)
+    return ( outlines, configDict, preseedCfgDeployPath )
+
+  def _isValidPreseedCfg(self, path):
+    try:
+      check_call([
+        "debconf-set-selections",
+        "--checkonly",
+        path,
+      ])
+      
+    except CalledProcessError as e:
+      print("Validation Failed for preseed file at %s, got Error: %s" % (path, e) )
+      return False
+    return True
     
+  def _deployPreseedCfg(self, content, config, path):
+    with open(path, "w") as outFile:
+      outFile.write(content)
+    print("Validating preseed file at path %s" % (path) )
+    if self._isValidPreseedCfg(path):
+      print("Passed Validation")
+      print("Adding boot entry for preseed file at path %s" % (path) )
+      self._setBootEntry(config)
+  
   def _generateIso(self):
     #~ genisoimage -r -V "Custom Debian Install CD" \
           #~ --cache-inodes \
@@ -264,7 +291,7 @@ class BuildInstaller(object):
     ])
   
   def _getTemplatePath(self, installType):
-    return "%s%s_%s" % (self.config.templatesPath, installType, self.config.templatesExtension)
+    return "%s%s%s" % (self.config.templatesPath, installType, self.config.templatesExtension)
     
   
   def __init__(self):
@@ -292,6 +319,7 @@ class BuildInstaller(object):
     
     installTypePaths = glob.glob( self._getTemplatePath("*") )
     installTypePathDict = {}
+    print(installTypePaths)
     
     for installTypePath in installTypePaths:
       installTypeRe = self.config.installTypeRe % (self.config.templatesPath, self.config.templatesExtension)
@@ -299,13 +327,20 @@ class BuildInstaller(object):
       installTypePathDict[installType] = installTypePath
     
     for installType, installTypePath in installTypePathDict.items():
-      print("Generating Config for install type %s from folder %s" % (installType, installTypePath) )
-      self.installType = installType
-      self.templatePath = installTypePath
-      self.InstallTypeConfig = import_module( self.templatePath.replace("/",".")+".config" )
-      #self._copyTemplateStaticPath()
-      self._generatePreseedCfg()
-    
+      print("Found Config for install type %s from folder %s" % (installType, installTypePath) )
+      if self.config.wantedInstallTypes and installType in self.config.wantedInstallTypes:
+        print("Generating Debian install entry for install type %s" % (installType) )
+        self.installType = installType
+        self.templatePath = installTypePath
+        self.InstallTypeConfig = import_module( self.templatePath.replace("/",".")+".config" )
+        preseedData, preseedConfig, preseedDeployPath = self._generatePreseedCfg()
+        # Add generated preseed file to cdrom
+        # Validate deployed file
+        # If valid, add boot entry
+        print("Copying preseed.cfg for install type %s to %s" % (installType, preseedDeployPath) )
+        self._deployPreseedCfg(preseedData, preseedConfig, preseedDeployPath )
+      else:        
+        print("Skipping install type %s because it's not in 'wantedInstallTypes': %s" % (installType, self.config.wantedInstallTypes) )
     self._generateIso()
 
 
